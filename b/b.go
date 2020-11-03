@@ -37,13 +37,14 @@ func home(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(result)
 
 	if err != nil {
-		log.Fatal("Error processing json...")
+		log.Fatal("Error processing json")
 	}
 
 	fmt.Fprintf(w, string(jsonData))
 }
 
 func makeHttpCall(urlMicroservice string, coupon string) Result {
+
 	values := url.Values{}
 	values.Add("coupon", coupon)
 
@@ -59,11 +60,13 @@ func makeHttpCall(urlMicroservice string, coupon string) Result {
 	data, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
-		log.Fatal("Error processing result...")
+		log.Fatal("Error processing result")
 	}
 
 	result := Result{}
+
 	json.Unmarshal(data, &result)
 
 	return result
+
 }
