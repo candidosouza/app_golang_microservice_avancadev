@@ -31,7 +31,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if resultCoupon.Status == "invalid" {
-		result.Status = "invqalid coupon"
+		result.Status = "invalid coupon"
 	}
 
 	jsonData, err := json.Marshal(result)
