@@ -9,10 +9,24 @@ import (
 	"net/url"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/joho/godotenv"
+	"github.com/wesleywillians/go-rabbitmq/queue"
 )
+
+type Order struct {
+	Coupon   string
+	CcNumber string
+}
 
 type Result struct {
 	Status string
+}
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env")
+	}
 }
 
 func main() {
@@ -28,10 +42,32 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func process(w http.ResponseWriter, r *http.Request) {
 
-	result := makeHttpCall("http://localhost:9091", r.FormValue("coupon"), r.FormValue("cc-number"))
+	coupon := r.PostFormValue("coupon")
+	ccNumber := r.PostFormValue("cc-number")
 
-	t := template.Must(template.ParseFiles("templates/home.html"))
-	t.Execute(w, result)
+	order := Order{
+		Coupon:   coupon,
+		CcNumber: ccNumber,
+	}
+
+	jsonOrder, err := json.Marshal(order)
+
+	if err != nil {
+		log.Fatal("Error parsing to json...")
+	}
+
+	rabbitMQ := queue.NewRabbitMQ()
+	ch := rabbitMQ.Connect()
+	defer ch.Close()
+
+	err = rabbitMQ.Notify(string(jsonOrder), "appication/json", "orders_ex", "")
+
+	if err != nil {
+		log.Fatal("Error sending message to the queue...")
+	}
+
+	t := template.Must(template.ParseFiles("templates/process.html"))
+	t.Execute(w, "")
 }
 
 func makeHttpCall(urlMicroservice string, coupon string, ccNumber string) Result {
